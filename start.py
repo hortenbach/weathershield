@@ -3,8 +3,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+NOTES:
+    In order to access data we have to create a folder named "data" in 
+    the same directory as this file and create a file "DarkSkyAPIkey.txt"
+    there, which holds an valid access key in the first line. 
+    
+    newScan = 1 does a complete request at the API and fecthes data.
+    newScan = 0 for programming and debugging we set newScan = 0 because
+            we don't want to talk to the API and wait for data and reload
+            all the libraries each time we change the code. 
+"""
+#https://api.darksky.net/forecast/[key]/[latitude],[longitude]
+newScan = 1
+chargingTime = 3 #in hours (data isnt more exact anyways)
+
+#Our shedule:
+#In how many days do we we want to be done (LESS OR EQUAL 14)
+doneInDays = 2
+#what time do we want to be done?
+hourDone=8
+minuteDone=30
+
 ######## DEF ########### 
-##### TODO: PACKAGE ####
+##### TODO: make a PACKAGE ####
 
 def plotData(data_np):
     plt.plot(data_np, '-g')
@@ -24,24 +46,18 @@ def plotDataAVG(wind_np, clouds_np, times):
     avg_line1 = ax.plot(c_avg, label='average', linestyle='--')
     # Make a legend
     legend = ax.legend(loc='upper right')
-    
     #plt.xticks(range(0,len(times), 50), times, rotation=45)
     plt.show()
-
-
-#https://api.darksky.net/forecast/[key]/[latitude],[longitude]
-newScan = 0
-chargingTime = 6 #in hours (data isnt more exact anyways)
+    
+###### PACKAGE END #########
 
 if newScan: 
     import requests
     import numpy as np
     import matplotlib.pyplot as plt
     import datetime
-    
-    berlin = [52.520008, 13.404954]
-    doneInDays = 12
-    
+    #forecast area coordinates
+    berlin = [52.520008, 13.404954]    
     data = {}
     now = datetime.date.today()
 
@@ -100,8 +116,6 @@ print(maximum_sums, windTimeSums[maximum_sums])
 print("[clouds] charging time with lowest average starts on ")
 minimum_avg = min(windTimeAVG, key=windTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
 print(maximum_avg, windTimeAVG[maximum_avg])
-
-
 
 plotDataAVG(winds_np, clouds_np, times)
 
