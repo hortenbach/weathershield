@@ -119,3 +119,17 @@ print(maximum_avg, windTimeAVG[maximum_avg])
 
 plotDataAVG(winds_np, clouds_np, times)
 
+chargingTime = 0
+'''
+TODO algorithm to choose how to shedule
+if maxWind ==maxSun:
+    chargingTime = max....
+else
+    ......
+'''
+chargingTime = maximum_avg
+
+#now that we know a good time we write it to a file for chrone
+with open("./data/cronjobinfo", "w") as f:
+        f.write(chargingTime) #TODO right format for crontab
+        f.close()
