@@ -4,6 +4,8 @@
 At the moment we use the DarkSky API.
 
 In order to store access data and keys we have (to create) a folder named "data". 
+There you have to create a file with your DarkSky token named DarkSkyAPIkey.txt
+or a file named metero with your id in the first line and psw in the second line. 
 
 
 ##ABOUT:
