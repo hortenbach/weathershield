@@ -15,7 +15,7 @@ def getDKForecast(doneInDays, client, client_id, client_secret):
     winds = []
     clouds =[]
     times = []
-    with open("./data/DarkSkyAPIkey.txt", "r") as f:
+    with open("./data/login.txt", "r") as f:
         key = f.readline()
     for i in range(0,doneInDays):
         r = requests.get(('https://api.darksky.net/forecast/{0}/{1},{2},{3}-{4}-{5:02d}T00:00:00Z?units=si').format(key,berlin[0],berlin[1],now.year,now.month,now.day+i))
@@ -37,9 +37,9 @@ def getDKForecast(doneInDays, client, client_id, client_secret):
                             client_secret=client_secret)
     return [winds, clouds, times]
     
-def getMeteorForecast(client, params, ):
+def getMeteorForecast(client, params):
     # fetch an access token
-    session = OAuth2Session(client=client, client_id, client_secret)
+    session = OAuth2Session(client, client_id, client_secret)
     session.fetch_token(token_url='https://auth.weather.mg/oauth/token',
                         client_id=client_id,
                         client_secret=client_secret)
