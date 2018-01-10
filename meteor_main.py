@@ -11,8 +11,8 @@ from oauthlib.oauth2 import BackendApplicationClient
 #from requests_oauthlib import OAuth2Session
 import Donnerwetter as dw
 
-client_id = 'p.waclaw'
-client_secret = 'NSbpWeyfCrQR6K9kbpuuTBwsgLrOHtLm'  # SECRET! find a secure place to store, do NOT share
+client_id = 'login.name'
+client_secret = 'yxyxyxyxyxy'  # SECRET! find a secure place to store, do NOT share
 
 client = BackendApplicationClient(client_id=client_id)
 client.prepare_request_body(scope=[])
