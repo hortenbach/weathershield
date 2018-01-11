@@ -10,18 +10,29 @@ import datetime
 location = '13,52' #berlin
 token_url='https://auth.weather.mg/oauth/token'
 forecastURL = 'https://point-forecast.weather.mg/search'
-now = datetime.date.today()
+now = datetime.datetime.now()
+
+batteryChargingTime = 0
 
 params = {
     'locatedAt': location,
     'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex',
     'validPeriod': 'PT0S',
-    'validFrom': ('{0}-{1:02d}-{2:02d}T14:00:00Z').format(now.year, now.month, now.day),
+    'validFrom': ('{0}-{1:02d}-{2:02d}T{3:02d}:00:00Z').format(now.year, now.month, now.day, now.hour),
     'validUntil': ''
 }
 
-def setDeadline(doneUntil):
-    params['validUntil'] = doneUntil
+def setDeadline(year, month, day, hour):
+    if (hour-batteryChargingTime) < 0:
+        day = day-1
+        if day <= 0:
+            month = month-1
+            if month <= 0:
+                year = year-1
+    params['validUntil'] = ('{0}-{1:02d}-{2:02d}T{3:02d}:00:00Z').format(year, month, day, hour-batteryChargingTime)
+
+def setBatteryChargingTime(chargingTimeInHours):
+    batteryChargingTime = chargingTimeInHours
 
 def getMeteoSession(logindatafile):
     """ Athenticate with logindata at Meteo API.
@@ -65,7 +76,9 @@ def getSolar(session):
         solar.append(forecast.get("clearSkyUVIndex"))
     return solar
 
-def getOptimumChargingTime(winds, clouds, times, chargingTime):
+def getOptimumChargingPointInTime():
+    winds, clouds, times, chargingTime
+
     # Get Max
     winds_np = np.fromiter(winds, np.float)
     clouds_np = np.fromiter(clouds, np.float)
