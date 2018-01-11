@@ -7,6 +7,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 
+location = '13,52' #berlin
+token_url='https://auth.weather.mg/oauth/token'
+forecastURL = 'https://point-forecast.weather.mg/search'
+now = datetime.date.today()
+
+params = {
+    'locatedAt': location,
+    'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex',
+    'validPeriod': 'PT0S',
+    'validFrom': ('{0}-{1:02d}-{2:02d}T14:00:00Z').format(now.year, now.month, now.day),
+    'validUntil': ''
+}
+
+def setDeadline(doneUntil):
+    params['validUntil'] = doneUntil
+
 def getMeteoSession(logindatafile):
     """ Athenticate with logindata at Meteo API.
     Return Session.
@@ -22,22 +38,13 @@ def getMeteoSession(logindatafile):
 
     # fetch an access token
     session = OAuth2Session(client=client)
-    session.fetch_token(token_url='https://auth.weather.mg/oauth/token',
+    session.fetch_token(token_url=token_url,
                         client_id=client_id,
                         client_secret=client_secret)
     return session
 
 def getForecastData(session):
-    # fetch example observation data
-    # the OAuth2Session will automatically handle adding authentication headers
-    params = {
-        'locatedAt': '13,52',
-        'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex',
-        'validPeriod': 'PT0S',
-        'validFrom': '2018-01-11T14:00:00.000Z',
-        'validUntil': '2018-01-26T14:00:00.000Z'
-    }
-    data = session.get('https://point-forecast.weather.mg/search', params=params)
+    data = session.get(forecastURL, params=params)
     return data
 
 def getWind(session):
@@ -57,51 +64,6 @@ def getSolar(session):
     for forecast in jsonData:
         solar.append(forecast.get("clearSkyUVIndex"))
     return solar
-
-def getDKForecast (doneInDays, client, client_id, client_secret):
-    #forecast area coordinates
-    berlin = [52.520008, 13.404954]
-    data = {}
-    now = datetime.date.today()
-    winds = []
-    clouds =[]
-    times = []
-    with open("./data/login.txt", "r") as f:
-        key = f.readline()
-    for i in range(0,doneInDays):
-        r = requests.get(('https://api.darksky.net/forecast/{0}/{1},{2},{3}-{4}-{5:02d}T00:00:00Z?units=si').format(key,berlin[0],berlin[1],now.year,now.month,now.day+i))
-        #DEBUG:
-        #print(i, r.status_code)
-        if r.status_code != 200:
-            print ("Error fetching data from API . . . ",r.status_code)
-        data=r.json()
-
-        for d in data['hourly']['data']:
-            times.append(datetime.datetime.fromtimestamp(d['time']).strftime("%A, %B %d, %Y %I:%M:%S"))
-            winds.append(d['windSpeed'])
-            clouds.append(d['cloudCover'])
-
-        # fetch an access token
-        session = OAuth2Session(client=client)
-        session.fetch_token(token_url='https://auth.weather.mg/oauth/token',
-                            client_id=client_id,
-                            client_secret=client_secret)
-    return [winds, clouds, times]
-
-def getMeteorForecast(client, params):
-    # fetch an access token
-    session = OAuth2Session(client, client_id, client_secret)
-    session.fetch_token(token_url='https://auth.weather.mg/oauth/token',
-                        client_id=client_id,
-                        client_secret=client_secret)
-
-    # access tokens are valid for one hour an can be re-used
-    # print "ACCESS TOKEN (base64 encoded) >>> " + session.access_token
-
-    #data = session.get('https://point-forecast.weather.mg/search?fields=averageWindSpeedInKilometerPerHour&locatedAt=13.40675,52.51789&validPeriod=PT24H,PT0S&validFrom=2017-12-12T14:00:00.000Z&validUntil=2017-12-27T14:00:00.000Z')
-    data = session.get('https://point-observation.weather.mg/search', params=params)
-    print ("RESPONSE DATA >>> " + data.text)
-    return json.loads(data.text)
 
 def getOptimumChargingTime(winds, clouds, times, chargingTime):
     # Get Max
