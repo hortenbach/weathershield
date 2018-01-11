@@ -6,13 +6,13 @@ import Donnerwetter.Donnerwetter as d
 
 now = datetime.datetime.now()
 
-logindatapath = "./data/login.meteo"
-
 d.setBatteryChargingTime(3)
 d.setDeadline(now.year, now.month, now.day+10, now.hour)
 
-session = d.getMeteoSession(logindatapath)
-wind = d.getWind(session)
+wind = d.getWind()
 print(wind)
-solar = d.getSolar(session)
+solar = d.getUV()
 print(solar)
+times = d.getFTimes()
+print('highest single value:', d.peak(wind, times))
+print('start of best charging period:', d.peakAVG(wind, times))

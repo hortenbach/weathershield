@@ -6,12 +6,14 @@ import requests
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import Donnerwetter.sessionhandling as s
 
 location = '13,52' #berlin
-token_url='https://auth.weather.mg/oauth/token'
 forecastURL = 'https://point-forecast.weather.mg/search'
-now = datetime.datetime.now()
 
+logindatapath = './data/login.meteo'
+now = datetime.datetime.now()
+session = s.getMeteoSession(logindatapath)
 batteryChargingTime = 0
 
 params = {
@@ -34,11 +36,14 @@ def setDeadline(year, month, day, hour):
 def setBatteryChargingTime(chargingTimeInHours):
     batteryChargingTime = chargingTimeInHours
 
-def getMeteoSession(logindatafile):
+def setLoginDataPath(path):
+    logindatapath = path
+
+def getMeteoSession(logindatapath):
     """ Athenticate with logindata at Meteo API.
     Return Session.
     """
-    with open(logindatafile, "r") as f:
+    with open(logindatapath, "r") as f:
         login = f.read().split()
         client_id = login[0]
         client_secret = login[1]
@@ -54,11 +59,11 @@ def getMeteoSession(logindatafile):
                         client_secret=client_secret)
     return session
 
-def getForecastData(session):
+def getForecastData(session=session):
     data = session.get(forecastURL, params=params)
     return data
 
-def getWind(session):
+def getWind(session=session):
     data = getForecastData(session)
     jsonResponse = json.loads(data.text)
     jsonData = jsonResponse["forecasts"]
@@ -67,63 +72,82 @@ def getWind(session):
         wind.append(forecast.get("windSpeedInKilometerPerHour"))
     return wind
 
-def getSolar(session):
+def getUV(session=session):
     data = getForecastData(session)
     jsonResponse = json.loads(data.text)
     jsonData = jsonResponse["forecasts"]
-    solar = []
+    uv = []
     for forecast in jsonData:
-        solar.append(forecast.get("clearSkyUVIndex"))
-    return solar
+        uv.append(forecast.get("clearSkyUVIndex"))
+    return uv
 
-def getOptimumChargingPointInTime():
-    winds, clouds, times, chargingTime
+def getFTimes(session=session):
+    data = getForecastData(session)
+    jsonResponse = json.loads(data.text)
+    jsonData = jsonResponse["forecasts"]
+    times = []
+    for forecast in jsonData:
+        times.append(forecast.get("validUntil"))
+    return times
 
-    # Get Max
-    winds_np = np.fromiter(winds, np.float)
-    clouds_np = np.fromiter(clouds, np.float)
+#TODO set right parameter and add to getForecastData
+def getCloudCoverage() :
+    data = getForecastData(session)
+    jsonResponse = json.loads(data.text)
+    jsonData = jsonResponse["forecasts"]
+    cc = []
+    for forecast in jsonData:
+        cc.append(forecast.get("XXX"))
+    return cc
 
-    windmax = winds_np.argmax() #Array position of max value
-    print("[wind] max value ", winds_np[windmax], " on the ", times[windmax])
-    print("[wind] values left of max ", winds_np[windmax-5:windmax])
-    print("[wind] values righ of max ", winds_np[windmax+1:windmax+6])
-    cloudmin = clouds_np.argmin() #Array position of max value
-    print("[clouds]max value ", clouds_np[cloudmin], " on the ", times[cloudmin])
-    print("[clouds] values left of max ", clouds_np[cloudmin+1:cloudmin+6,])
+def printMax(source, times):
+        source_np = np.fromiter(source, np.float)
+        sourcemax = source_np.argmax() #Array position of max value
+        print("max value ", source_np[sourcemax], " on the ", times[sourcemax])
 
-    windTimeSums = {}
-    windTimeAVG = {}
-    cloudTimeSums= {}
-    cloudTimeAVG= {}
+def peak(source, times):
+    source_np = np.fromiter(source, np.float)
+    sourceTimeSums = {}
+    sourceTimeAVG = {}
+    for i in range(0, len(source)-batteryChargingTime):
+        sourceTimeSums[times[i]] = np.sum(source_np[i:i+batteryChargingTime+1])
+        sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
+    maximum_sums = max(sourceTimeSums, key=sourceTimeSums.get)  # Just use 'min' instead of 'max' for minimum.
+    return [maximum_sums,sourceTimeSums[maximum_sums]]
 
-    for i in range(0, len(winds)-chargingTime):
-        windTimeSums[times[i]] = np.sum(winds_np[i:i+chargingTime+1])
-        windTimeAVG[times[i]] = np.average(winds_np[i:i+chargingTime+1])
+def peakAVG(source, times):
+    """ returns value and charging time with highest average """
+    source_np = np.fromiter(source, np.float)
+    sourceTimeSums = {}
+    sourceTimeAVG = {}
+    for i in range(0, len(source)-batteryChargingTime):
+        sourceTimeSums[times[i]] = np.sum(source_np[i:i+batteryChargingTime+1])
+        sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
+    maximum_avg = max(sourceTimeAVG, key=sourceTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
+    return [maximum_avg, sourceTimeAVG[maximum_avg]]
 
-    for i in range(0, len(clouds)-chargingTime):
-        cloudTimeSums[times[i]] = np.sum(clouds_np[i:i+chargingTime+1])
-        cloudTimeAVG[times[i]] = np.average(clouds_np[i:i+chargingTime+1])
+def peakMin(source, times):
+    source_np = np.fromiter(source, np.float)
+    sourceTimeSums = {}
+    sourceTimeAVG = {}
+    for i in range(0, len(source)-batteryChargingTime):
+        sourceTimeSums[times[i]] = np.sum(source_np[i:i+batteryChargingTime+1])
+        sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
+    minimum_sums = min(sourceTimeSums, key=sourceTimeSums.get)  # Just use 'min' instead of 'max' for minimum.
+    return [minimum_sums,sourceTimeSums[maximum_sums]]
 
-    print("[wind] charging time with highest values starts on ")
-    maximum_sums = max(windTimeSums, key=windTimeSums.get)  # Just use 'min' instead of 'max' for minimum.
-    print(maximum_sums, windTimeSums[maximum_sums])
-    print("[wind] charging time with highest average starts on ")
-    maximum_avg = max(windTimeAVG, key=windTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
-    print(maximum_avg, windTimeAVG[maximum_avg])
-
-    print("[clouds] charging time with lowest values starts on ")
-    minimum_sums = min(cloudTimeSums, key=cloudTimeSums.get)  # Just use 'min' instead of 'max' for minimum.
-    print(minimum_sums, windTimeSums[minimum_sums])
-    print("[clouds] charging time with lowest average starts on ")
-    minimum_avg = min(cloudTimeAVG, key=cloudTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
-    print(minimum_avg, cloudTimeAVG[minimum_avg])
-    #TODO: find a shared Optimum between all Data
-    # for now we use wind optimum as global optimum
-    optimalTimeForCharging = maximum_avg
-    return optimalTimeForCharging
+def peakAVGmin(source, times):
+    """ returns value and charging time with highest average """
+    source_np = np.fromiter(source, np.float)
+    sourceTimeSums = {}
+    sourceTimeAVG = {}
+    for i in range(0, len(source)-batteryChargingTime):
+        sourceTimeSums[times[i]] = np.sum(source_np[i:i+batteryChargingTime+1])
+        sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
+    minimum_avg = min(sourceTimeAVG, key=sourceTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
+    return [minimum_avg, sourceTimeAVG[minimum_avg]]
 
 def shedule(startTime):
-    #now that we know a good time we write it to a file for chrone
     with open("./data/cronjobinfo", "w") as f:
             f.write(startTime) #TODO right format for crontab
             f.close()
@@ -134,16 +158,16 @@ def plotData(data):
     plt.plot()
     plt.show()
 
-def plotDataAVG(winds, clouds, times):
-    wind_np = np.fromiter(winds, np.float)
-    clouds_np = np.fromiter(clouds, np.float)
+def plotDataAVG(source1, source2, times):
+    source1_np = np.fromiter(source1, np.float)
+    source2_np = np.fromiter(source2, np.float)
     # Calculate the simple average of the data
-    w_avg = [np.average(wind_np)]*len(wind_np)
-    c_avg = [np.average(clouds_np)]*len(clouds_np)
+    w_avg = [np.average(source1_np)]*len(source1_np)
+    c_avg = [np.average(source2_np)]*len(source2_np)
     fig,ax = plt.subplots()
     # Plot the data
-    data_line1 = ax.plot(wind_np, label='wind')
-    data_line2 = ax.plot(clouds_np, label='clouds')
+    data_line1 = ax.plot(source1_np, label='wind')
+    data_line2 = ax.plot(source2_np, label='source2')
     # Plot the average line
     avg_line1 = ax.plot(w_avg, label='average', linestyle='--')
     avg_line1 = ax.plot(c_avg, label='average', linestyle='--')
