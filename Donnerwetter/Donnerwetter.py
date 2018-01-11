@@ -1,4 +1,4 @@
-#from oauthlib.oauth2 import BackendApplicationClient
+from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 import requests
 import json
@@ -27,6 +27,36 @@ def getMeteoSession(logindatafile):
                         client_secret=client_secret)
     return session
 
+def getForecastData(session):
+    # fetch example observation data
+    # the OAuth2Session will automatically handle adding authentication headers
+    params = {
+        'locatedAt': '13,52',
+        'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex',
+        'validPeriod': 'PT0S',
+        'validFrom': '2018-01-11T14:00:00.000Z',
+        'validUntil': '2018-01-26T14:00:00.000Z'
+    }
+    data = session.get('https://point-forecast.weather.mg/search', params=params)
+    return data
+
+def getWind(session):
+    data = getForecastData(session)
+    jsonResponse = json.loads(data.text)
+    jsonData = jsonResponse["forecasts"]
+    wind = []
+    for forecast in jsonData:
+        wind.append(forecast.get("windSpeedInKilometerPerHour"))
+    return wind
+
+def getSolar(session):
+    data = getForecastData(session)
+    jsonResponse = json.loads(data.text)
+    jsonData = jsonResponse["forecasts"]
+    solar = []
+    for forecast in jsonData:
+        solar.append(forecast.get("clearSkyUVIndex"))
+    return solar
 
 def getDKForecast (doneInDays, client, client_id, client_secret):
     #forecast area coordinates
@@ -146,4 +176,3 @@ def plotDataAVG(winds, clouds, times):
     legend = ax.legend(loc='upper right')
     #plt.xticks(range(0,len(times), 50), times, rotation=45)
     plt.show()
-
