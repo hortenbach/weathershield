@@ -38,10 +38,11 @@ if newScan:
     winds = []
     times = []
     clouds =[]
-    with open("./data/DarkSkyAPIkey.txt", "r") as f:
+    with open("./data/login.txt", "r") as f:
         key = f.readline()
     for i in range(0,doneInDays):
-        r = requests.get(('https://api.darksky.net/forecast/{0}/{1},{2},{3}-{4:02d}-{5:02d}T00:00:00Z?units=si').format(key,berlin[0],berlin[1],now.year,now.month,now.day+i))
+       # r = requests.get(('https://api.darksky.net/forecast/{0}/{1},{2},{3:02d}-{4:02d}-{5:02d}T00:00:00Z?units=si').format(key,berlin[0],berlin[1],now.year,now.month,now.day+i))
+        r = requests.get('https://api.darksky.net/forecast/4bb9524c36664772add8e3adafdf0a2b/52.520008, 13.404954,2018-01-18T12:00:00Z')
         #DEBUG:
         #print(i, r.status_code)
         if r.status_code != 200:

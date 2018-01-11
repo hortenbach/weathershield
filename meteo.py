@@ -1,9 +1,11 @@
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
 
-client_id = 'aus datei'
-client_secret = 'aus datei
-
+with open("./data/login.meteo", "r") as f:
+        login = f.read().split()
+        client_id = login[0]
+        client_secret = login[1]
+        f.close()
 
 client = BackendApplicationClient(client_id=client_id)
 client.prepare_request_body(scope=[])
@@ -24,6 +26,15 @@ params = {
     'observedPeriod': 'PT0S',
     'fields': 'airTemperatureInCelsius'
 }
-data = session.get('https://point-observation.weather.mg/search', params=params)
+#data = session.get('https://point-observation.weather.mg/search', params=params)
 
-print ("RESPONSE DATA >>> " + data.text)
+data = session.get('https://point-forecast.weather.mg/search?fields=windSpeedInKilometerPerHour,clearSkyUVIndex&locatedAt=13.40675,52.51789&validPeriod=PT0S&validFrom=2018-01-11T14:00:00.000Z&validUntil=2018-01-26T14:00:00.000Z')
+
+jsonResponse = json.loads(data.text)
+jsonData = jsonResponse["forecasts"]
+for forecast in jsonData:
+    print(forecast.get("windSpeedInKilometerPerHour"))
+    print(forecast.get("clearSkyUVIndex"))
+    
+
+#print ("RESPONSE DATA >>> " + data.text)
