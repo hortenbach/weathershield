@@ -78,10 +78,15 @@ def getCloudCoverage(session=session):
     jsonData = jsonResponse["forecasts"]
     cloud2000 = []
     cloud5000 = []
+    timeline = []
+    cloudtotal = []
     for forecast in jsonData:
+        timeline.append(forecast.get("validUntil"))
         cloud2000.append(forecast.get("cloudCoverLowerThan2000MeterInOcta"))
         cloud5000.append(forecast.get("cloudCoverLowerThan5000MeterInOcta"))
-    return [cloud2000, cloud5000]
+    for i in range(len(timeline)):
+        cloudtotal.append(cloud2000[i] + cloud5000[i])
+    return cloudtotal
 
 def getUV(session=session):
     data = getForecastData(session)
@@ -135,10 +140,10 @@ def peakMin(source, times):
         sourceTimeSums[times[i]] = np.sum(source_np[i:i+batteryChargingTime+1])
         sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
     minimum_sums = min(sourceTimeSums, key=sourceTimeSums.get)  # Just use 'min' instead of 'max' for minimum.
-    return [minimum_sums,sourceTimeSums[maximum_sums]]
+    return [minimum_sums,sourceTimeSums[minimum_sums]]
 
 def peakAVGmin(source, times):
-    """ returns value and charging time with highest average """
+    """ returns value and charging time with lowest average """
     source_np = np.fromiter(source, np.float)
     sourceTimeSums = {}
     sourceTimeAVG = {}
@@ -147,6 +152,18 @@ def peakAVGmin(source, times):
         sourceTimeAVG[times[i]] = np.average(source_np[i:i+batteryChargingTime+1])
     minimum_avg = min(sourceTimeAVG, key=sourceTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
     return [minimum_avg, sourceTimeAVG[minimum_avg]]
+
+def optimalTime():
+    timedata = getFTimes()
+    winddata = getWind()
+    clouddata = getCloudCoverage()
+    windOptimum = [peak(winddata, timedata), peakAVG(winddata, timedata)]
+    cloudOptimum = [peakMin(clouddata, timedata), peakAVGmin(clouddata, timedata)]
+    print("windoptimum >>>")
+    print(windOptimum)
+    print("cloud optimum >>>")
+    print(cloudOptimum)
+
 
 def shedule(startTime):
     with open("./data/cronjobinfo", "w") as f:
