@@ -18,7 +18,7 @@ batteryChargingTime = 0
 
 params = {
     'locatedAt': location,
-    'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex',
+    'fields': 'windSpeedInKilometerPerHour,clearSkyUVIndex,cloudCoverLowerThan2000MeterInOcta,cloudCoverLowerThan5000MeterInOcta',
     'validPeriod': 'PT0S',
     'validFrom': ('{0}-{1:02d}-{2:02d}T{3:02d}:00:00Z').format(now.year, now.month, now.day, now.hour),
     'validUntil': ''
@@ -72,6 +72,17 @@ def getWind(session=session):
         wind.append(forecast.get("windSpeedInKilometerPerHour"))
     return wind
 
+def getCloudCoverage(session=session):
+    data = getForecastData(session)
+    jsonResponse = json.loads(data.text)
+    jsonData = jsonResponse["forecasts"]
+    cloud2000 = []
+    cloud5000 = []
+    for forecast in jsonData:
+        cloud2000.append(forecast.get("cloudCoverLowerThan2000MeterInOcta"))
+        cloud5000.append(forecast.get("cloudCoverLowerThan5000MeterInOcta"))
+    return [cloud2000, cloud5000]
+
 def getUV(session=session):
     data = getForecastData(session)
     jsonResponse = json.loads(data.text)
@@ -89,16 +100,6 @@ def getFTimes(session=session):
     for forecast in jsonData:
         times.append(forecast.get("validUntil"))
     return times
-
-#TODO set right parameter and add to getForecastData
-def getCloudCoverage() :
-    data = getForecastData(session)
-    jsonResponse = json.loads(data.text)
-    jsonData = jsonResponse["forecasts"]
-    cc = []
-    for forecast in jsonData:
-        cc.append(forecast.get("XXX"))
-    return cc
 
 def printMax(source, times):
         source_np = np.fromiter(source, np.float)
