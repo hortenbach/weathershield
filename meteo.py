@@ -1,40 +1,18 @@
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+import json
+import datetime
+import Donnerwetter.Donnerwetter as d
 
-with open("./data/login.meteo", "r") as f:
-        login = f.read().split()
-        client_id = login[0]
-        client_secret = login[1]
-        f.close()
+now = datetime.datetime.now()
 
-client = BackendApplicationClient(client_id=client_id)
-client.prepare_request_body(scope=[])
+d.setBatteryChargingTime(3)
+d.setDeadline(now.year, now.month, now.day+10, now.hour)
 
-# fetch an access token
-session = OAuth2Session(client=client)
-session.fetch_token(token_url='https://auth.weather.mg/oauth/token',
-                    client_id=client_id,
-                    client_secret=client_secret)
-
-# access tokens are valid for one hour an can be re-used
-# print "ACCESS TOKEN (base64 encoded) >>> " + session.access_token
-
-# fetch example observation data
-# the OAuth2Session will automatically handle adding authentication headers
-params = {
-    'locatedAt': '13,52',
-    'observedPeriod': 'PT0S',
-    'fields': 'airTemperatureInCelsius'
-}
-#data = session.get('https://point-observation.weather.mg/search', params=params)
-
-data = session.get('https://point-forecast.weather.mg/search?fields=windSpeedInKilometerPerHour,clearSkyUVIndex&locatedAt=13.40675,52.51789&validPeriod=PT0S&validFrom=2018-01-11T14:00:00.000Z&validUntil=2018-01-26T14:00:00.000Z')
-
-jsonResponse = json.loads(data.text)
-jsonData = jsonResponse["forecasts"]
-for forecast in jsonData:
-    print(forecast.get("windSpeedInKilometerPerHour"))
-    print(forecast.get("clearSkyUVIndex"))
-    
-
-#print ("RESPONSE DATA >>> " + data.text)
+wind = d.getWind()
+print(wind)
+solar = d.getUV()
+print(solar)
+times = d.getFTimes()
+print('highest single value:', d.peak(wind, times))
+print('start of best charging period:', d.peakAVG(wind, times))
