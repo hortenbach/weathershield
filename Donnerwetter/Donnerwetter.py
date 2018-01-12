@@ -153,7 +153,7 @@ def peakAVGmin(source, times):
     minimum_avg = min(sourceTimeAVG, key=sourceTimeAVG.get)  # Just use 'min' instead of 'max' for minimum.
     return [minimum_avg, sourceTimeAVG[minimum_avg]]
 
-def optimalTime():
+def printOps():
     timedata = getFTimes()
     winddata = getWind()
     clouddata = getCloudCoverage()
@@ -164,10 +164,39 @@ def optimalTime():
     print("cloud optimum >>>")
     print(cloudOptimum)
 
+def optimalTime():
+    best = getOptimums()
+    return best[1]
 
-def shedule(startTime):
+def getOptimums():
+    timedata = getFTimes()
+    winddata = getWind()
+    clouddata = getCloudCoverage()
+    wind_np = np.fromiter(winddata, np.float)
+    cloud_np = np.fromiter(clouddata, np.float)
+    windSums = {}
+    cloudSums = {}
+    best = [0, 100]
+    date = []
+    # calculate the sum of all possible charging periods
+    for i in range(len(timedata)-batteryChargingTime):
+        windSums[timedata[i]] = np.sum(wind_np[i:i+batteryChargingTime+1])
+        cloudSums[timedata[i]] = np.sum(cloud_np[i:i+batteryChargingTime+1])
+        # windTimeAVG[timedata[i]] = np.average(wind_np[i:i+batteryChargingTime+1])
+        # cloudTimeAVG[timedata[i]] = np.average(cloud_np[i:i+batteryChargingTime+1])
+    # find day where winds are high and clouds are low
+    for i in range(len(timedata)):
+        if windSums[timedata[i]] >= best[0]:
+            #print ("true")
+            if cloudSums[timedata[i]] <= best[1]:
+                #print ("true2")
+                best = [windSums[timedata[i]], cloudSums[timedata[i]]]
+                date = timedata[i]
+    return [best, date]
+
+def shedule():
     with open("./data/cronjobinfo", "w") as f:
-            f.write(startTime) #TODO right format for crontab
+            f.write(optimalTime()) #TODO right format for crontab
             f.close()
 
 def plotData(data):
