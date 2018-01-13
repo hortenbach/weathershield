@@ -8,6 +8,11 @@ import Donnerwetter.Donnerwetter as d
 now = datetime.datetime.now()
 d.setBatteryChargingTime(3)
 
-#write chronjob for charging within 5 days
+#we want to charge within 5 days
 d.setDeadline(now.year, now.month, now.day+5, now.hour)
+#get optimal/greenest time to charge battery
+bestTime = d.optimalTime()
+print(bestTime)
+d.printOps()
+#set job for system to charge battery on optimal time
 d.shedule()

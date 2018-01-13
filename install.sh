@@ -13,3 +13,6 @@ echo 'cp contend from this folder into /opt/Donnerwetter ...'
 cp /opt/weathershield/bash/weathershield_cron_hourly.sh /etc/cron.hourly/
 cp ./bash/weathershield_cron_hourly.sh /etc/cron.hourly/
 echo 'setting cronjob in /etc/cron.hourly ...'
+echo 'copy meteo.py into /etc/init.d adding to startup ...'
+cp /etc/init.d/meteo.py /opt/weathershield/meteo.py
+

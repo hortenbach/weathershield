@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import datetime
 import Donnerwetter.sessionhandling as s
 
-location = '13,52' #berlin
+location = '13,52' #windpark goersdorf
 forecastURL = 'https://point-forecast.weather.mg/search'
 
 logindatapath = './data/login.meteo'
@@ -21,8 +21,8 @@ hour=0
 day=0
 month=0
 year = 0
-
-chronjob = cron.new(command='/etc/weathershield/bash/start.py')
+cron=CronTab()
+cronjob = cron.new(command='/etc/weathershield/bash/start.py')
 
 params = {
     'locatedAt': location,
@@ -35,6 +35,7 @@ params = {
 def setDeadline(year, month, day, hour):
     if (hour-batteryChargingTime) < 0:
         day = day-1
+        hour = 24+(hour-batteryChargingTime)
         if day <= 0:
             month = month-1
             if month <= 0:
@@ -68,11 +69,15 @@ def getMeteoSession(logindatapath):
     return session
 
 def getForecastData(session=session):
+    print(forecastURL)
+    print(params)
+    print(day)
     data = session.get(forecastURL, params=params)
     return data
 
 def getWind(session=session):
     data = getForecastData(session)
+    print(data.text)
     jsonResponse = json.loads(data.text)
     jsonData = jsonResponse["forecasts"]
     wind = []
@@ -178,7 +183,9 @@ def optimalTime():
 
 def getOptimums():
     timedata = getFTimes()
+    print(timedata)
     winddata = getWind()
+    print(winddata)
     clouddata = getCloudCoverage()
     wind_np = np.fromiter(winddata, np.float)
     cloud_np = np.fromiter(clouddata, np.float)
@@ -203,18 +210,14 @@ def getOptimums():
     return [best, date]
 
 def shedule():
-    cronjob.minute().on(0)
-    cronjob.hour.on(hour)
-    cronjob.day.on(day)
-    cronjob.month.on(month)
+    cronjob.setall(('0 {hour} {day} {month} *').format(hour=hour, day=day, month=month))
     with open("./data/cronjobinfo", "w") as f:
         f.seek(0)
-        f.write(now)
         f.write(optimalTime()) #TODO right format for crontab
         f.close()
-    print("sheduled new cromjob. List of existing jobs:")
-    for job in chronjob:
-        print(chronjob)
+    print("sheduled new cronjob. List of existing jobs:")
+    for job in cronjob:
+        print(job)
 
 def plotData(data):
     data_np = np.array(data)
