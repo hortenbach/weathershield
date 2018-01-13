@@ -1,5 +1,7 @@
+#!/bin/python3
 from oauthlib.oauth2 import BackendApplicationClient
 from requests_oauthlib import OAuth2Session
+from crontab import CronTab
 import requests
 import json
 import requests
@@ -15,6 +17,12 @@ logindatapath = './data/login.meteo'
 now = datetime.datetime.now()
 session = s.getMeteoSession(logindatapath)
 batteryChargingTime = 0
+hour=0
+day=0
+month=0
+year = 0
+
+chronjob = cron.new(command='/etc/weathershield/bash/start.py')
 
 params = {
     'locatedAt': location,
@@ -195,9 +203,18 @@ def getOptimums():
     return [best, date]
 
 def shedule():
+    cronjob.minute().on(0)
+    cronjob.hour.on(hour)
+    cronjob.day.on(day)
+    cronjob.month.on(month)
     with open("./data/cronjobinfo", "w") as f:
-            f.write(optimalTime()) #TODO right format for crontab
-            f.close()
+        f.seek(0)
+        f.write(now)
+        f.write(optimalTime()) #TODO right format for crontab
+        f.close()
+    print("sheduled new cromjob. List of existing jobs:")
+    for job in chronjob:
+        print(chronjob)
 
 def plotData(data):
     data_np = np.array(data)
